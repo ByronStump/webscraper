@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { getFirstParagraphFromHTML, getH1FromHTML, getImagesFromHTML, getURLsFromHTML, normalizeURL } from "./crawl";
+import { extractPageData, getFirstParagraphFromHTML, getH1FromHTML, getImagesFromHTML, getURLsFromHTML, normalizeURL } from "./crawl";
 
 test('normalizes input url from: https://blog.boot.dev/path/ to: blog.boot.dev/path', () => {
     expect(normalizeURL("https://blog.boot.dev/path/")).toBe("blog.boot.dev/path")
@@ -134,4 +134,55 @@ test("getImagesFromHTML missing src", () => {
   const inputBody = `<html><body><img alt="Logo"></body></html>`;
 
   expect(() => getImagesFromHTML(inputBody, inputURL)).toThrow();
+});
+
+test("extractPageData basic", () => {
+  const inputURL = "https://blog.boot.dev";
+  const inputBody = `
+    <html><body>
+      <h1>Test Title</h1>
+      <p>This is the first paragraph.</p>
+      <a href="/link1">Link 1</a>
+      <img src="/image1.jpg" alt="Image 1">
+    </body></html>
+  `;
+
+  const actual = extractPageData(inputBody, inputURL);
+  const expected = {
+    url: "https://blog.boot.dev",
+    h1: "Test Title",
+    first_paragraph: "This is the first paragraph.",
+    outgoing_links: ["https://blog.boot.dev/link1"],
+    image_urls: ["https://blog.boot.dev/image1.jpg"],
+  };
+
+  expect(actual).toEqual(expected);
+});
+test("extractPageData basic2", () => {
+  const inputURL = "https://blog.boot.dev";
+  const inputBody = `
+    <html><body>
+      <h1>Test Title</h1>
+      <p>This is the first paragraph.</p>
+      <main>
+      <p>This is the main paragraph.</p>
+      <a href="/link1">Link 1</a>
+      <a href="/link2">Link 2</a>
+      <img src="/image1.jpg" alt="Image 1">
+      <img src="/image2.jpg" alt="Image 2">
+      </main>
+      
+    </body></html>
+  `;
+
+  const actual = extractPageData(inputBody, inputURL);
+  const expected = {
+    url: "https://blog.boot.dev",
+    h1: "Test Title",
+    first_paragraph: "This is the main paragraph.",
+    outgoing_links: ["https://blog.boot.dev/link1", "https://blog.boot.dev/link2"],
+    image_urls: ["https://blog.boot.dev/image1.jpg", "https://blog.boot.dev/image2.jpg"],
+  };
+
+  expect(actual).toEqual(expected);
 });
