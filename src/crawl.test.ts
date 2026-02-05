@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { getFirstParagraphFromHTML, getH1FromHTML, normalizeURL } from "./crawl";
+import { getFirstParagraphFromHTML, getH1FromHTML, getImagesFromHTML, getURLsFromHTML, normalizeURL } from "./crawl";
 
 test('normalizes input url from: https://blog.boot.dev/path/ to: blog.boot.dev/path', () => {
     expect(normalizeURL("https://blog.boot.dev/path/")).toBe("blog.boot.dev/path")
@@ -66,4 +66,72 @@ test("getFirstParagraphFromHTML only outside p", () => {
   const actual = getFirstParagraphFromHTML(inputBody);
   const expected = "Outside paragraph.";
   expect(actual).toEqual(expected);
+});
+
+test("getURLsFromHTML absolute", () => {
+  const inputURL = "https://blog.boot.dev";
+  const inputBody = `<html><body><a href="/path/one"><span>Boot.dev</span></a></body></html>`;
+
+  const actual = getURLsFromHTML(inputBody, inputURL);
+  const expected = ["https://blog.boot.dev/path/one"];
+
+  expect(actual).toEqual(expected);
+});
+test("getURLsFromHTML full url", () => {
+  const inputURL = "https://blog.boot.dev";
+  const inputBody = `<html><body><a href="https://blog.boot.dev/path/one"><span>Boot.dev</span></a></body></html>`;
+
+  const actual = getURLsFromHTML(inputBody, inputURL);
+  const expected = ["https://blog.boot.dev/path/one"];
+
+  expect(actual).toEqual(expected);
+});
+test("getURLsFromHTML double absolute", () => {
+  const inputURL = "https://blog.boot.dev";
+  const inputBody = `<html><body><a href="/path/one"><span>Boot.dev</span></a><a href="/path/two"><span>Boot.dev</span></a></body></html>`;
+
+  const actual = getURLsFromHTML(inputBody, inputURL);
+  const expected = ["https://blog.boot.dev/path/one", "https://blog.boot.dev/path/two"];
+
+  expect(actual).toEqual(expected);
+});
+test("getURLsFromHTML missing href", () => {
+  const inputURL = "https://blog.boot.dev";
+  const inputBody = `<html><body><a>something</a></body></html>`;
+
+  expect(() => getURLsFromHTML(inputBody, inputURL)).toThrow();
+});
+
+test("getImagesFromHTML relative", () => {
+  const inputURL = "https://blog.boot.dev";
+  const inputBody = `<html><body><img src="/logo.png" alt="Logo"></body></html>`;
+
+  const actual = getImagesFromHTML(inputBody, inputURL);
+  const expected = ["https://blog.boot.dev/logo.png"];
+
+  expect(actual).toEqual(expected);
+});
+test("getImagesFromHTML double relative", () => {
+  const inputURL = "https://blog.boot.dev";
+  const inputBody = `<html><body><img src="/logo.png" alt="Logo"><img src="/logo2.png" alt="Logo"></body></html>`;
+
+  const actual = getImagesFromHTML(inputBody, inputURL);
+  const expected = ["https://blog.boot.dev/logo.png", "https://blog.boot.dev/logo2.png"];
+
+  expect(actual).toEqual(expected);
+});
+test("getImagesFromHTML full", () => {
+  const inputURL = "https://blog.boot.dev";
+  const inputBody = `<html><body><img src="https://blog.boot.dev/logo.png" alt="Logo"></body></html>`;
+
+  const actual = getImagesFromHTML(inputBody, inputURL);
+  const expected = ["https://blog.boot.dev/logo.png"];
+
+  expect(actual).toEqual(expected);
+});
+test("getImagesFromHTML missing src", () => {
+  const inputURL = "https://blog.boot.dev";
+  const inputBody = `<html><body><img alt="Logo"></body></html>`;
+
+  expect(() => getImagesFromHTML(inputBody, inputURL)).toThrow();
 });
