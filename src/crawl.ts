@@ -1,6 +1,14 @@
 import url from "node:url";
 import { JSDOM } from "jsdom";
 
+type ExtractedPageData = {
+    url: string,
+    h1: string,
+    first_paragraph: string,
+    outgoing_links: string[],
+    image_urls: string[]
+}
+
 export function normalizeURL(rawURL: string): string {
     const parsedURL = url.parse(rawURL)
     if (!parsedURL.host) {
@@ -44,6 +52,7 @@ export function getURLsFromHTML(html: string, baseURL: string): string[] {
     }
     return result
 }
+
 export function getImagesFromHTML(html: string, baseURL: string): string[] {
     const dom = new JSDOM(html)
     const doc = dom.window.document
@@ -70,10 +79,30 @@ export function extractPageData(html: string, pageURL: string): ExtractedPageDat
     }
 }
 
-type ExtractedPageData = {
-    url: string,
-    h1: string,
-    first_paragraph: string,
-    outgoing_links: string[],
-    image_urls: string[]
+export async function getHTML(url: string) {
+    try {
+        const response = await fetch(url, {
+            headers: {
+                "User-Agent": "BootCrawler/1.0"
+            }
+        })
+        if (!response.ok || response.status >= 400) {
+            console.log(`Response status: ${response.status}`)
+            return
+        }
+        const contentType = response.headers.get("content-type")
+        if (!contentType?.includes("text/html")  || !contentType) {
+            console.log(`Error getting content-type text/html`)
+            return
+        }
+        const html = await response.text()
+        if (!html) {
+            console.log(`Error converting response to html`)
+            return
+        }
+        return html
+    } catch (err) {
+        throw new Error(`Got Network error: ${(err as Error).message}`)
+    }
+    
 }
