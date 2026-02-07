@@ -10,16 +10,16 @@ type ExtractedPageData = {
 }
 
 export function normalizeURL(rawURL: string): string {
-    const parsedURL = url.parse(rawURL)
+    const parsedURL = new URL(rawURL)
     if (!parsedURL.host) {
         throw new Error(`Error, no host found in rawURL`)
 
     }
-    if (!parsedURL.path) {
+    if (!parsedURL.pathname) {
         throw new Error(`Error, no path found in rawURL`)
 
     }
-    return parsedURL.host + parsedURL.path.replace(/\/$/, "")
+    return parsedURL.host + parsedURL.pathname.replace(/\/$/, "")
 }
 
 export function getH1FromHTML(html: string): string{
@@ -105,4 +105,35 @@ export async function getHTML(url: string) {
         throw new Error(`Got Network error: ${(err as Error).message}`)
     }
     
+}
+
+export async function crawlPage(
+  baseURL: string,
+  currentURL: string = baseURL,
+  pages: Record<string, number> = {},
+) {
+    if (new URL(currentURL).hostname !== new URL(baseURL).hostname) {
+        return pages
+    }
+    const normalizedURL = normalizeURL(currentURL)
+    if (pages[normalizedURL] > 0) {
+        pages[normalizedURL]++
+        return pages
+    }
+    pages[normalizedURL] = 1
+
+    console.log("IT'S CRAWL TIME!\n")
+    console.log(`Fetching from: ${currentURL}`)
+    const html = await getHTML(currentURL)
+    if (!html) {
+        console.log(`html from: ${currentURL}, doesn't have any html`)
+        return pages
+    }
+    console.log(`HTML:\n${html}`)
+    const htmlURLs = getURLsFromHTML(html, baseURL)
+    for (const url of htmlURLs) {
+        pages = await crawlPage(baseURL, url, pages)
+    }
+    return pages
+
 }
