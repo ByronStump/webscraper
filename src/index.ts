@@ -1,5 +1,5 @@
 import { argv } from "node:process"
-import { crawlPage, getHTML } from "./crawl"
+import { crawlSiteAsync } from "./crawl"
 
 async function main() {
     const args = argv
@@ -11,7 +11,7 @@ async function main() {
         process.exit(1)
     }
     console.log(`IT'S CRAWL TIME!\n\nCrawling: ${args[2]}`)
-    const pages = await crawlPage(args[2])
+    const pages = await crawlSiteAsync(args[2])
     console.log(`\nDATA ACQUIRED...\n`)
     console.log(pages)
     process.exit(0)
