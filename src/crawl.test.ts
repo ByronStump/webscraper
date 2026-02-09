@@ -1,18 +1,31 @@
 import { expect, test } from "vitest";
-import { extractPageData, getFirstParagraphFromHTML, getH1FromHTML, getImagesFromHTML, getURLsFromHTML, normalizeURL } from "./crawl";
+import {
+  extractPageData,
+  getFirstParagraphFromHTML,
+  getH1FromHTML,
+  getImagesFromHTML,
+  getURLsFromHTML,
+  normalizeURL,
+} from "./crawl";
 
-test('normalizes input url from: https://blog.boot.dev/path/ to: blog.boot.dev/path', () => {
-    expect(normalizeURL("https://blog.boot.dev/path/")).toBe("blog.boot.dev/path")
-})
-test('normalizes input url from: http://blog.boot.dev/path/ai/ to: blog.boot.dev/path/ai', () => {
-    expect(normalizeURL("http://blog.boot.dev/path/ai/")).toBe("blog.boot.dev/path/ai")
-})
-test('normalizes input url from: https://blog.boot.dev to: blog.boot.dev', () => {
-    expect(normalizeURL("https://blog.boot.dev")).toBe("blog.boot.dev")
-})
-test('normalizes input url from: https://blog.boot.dev/path/aaaa/bbbb/cccc to: blog.boot.dev/path/aaaa/bbbb/cccc', () => {
-    expect(normalizeURL("https://blog.boot.dev/path/aaaa/bbbb/cccc")).toBe("blog.boot.dev/path/aaaa/bbbb/cccc")
-})
+test("normalizes input url from: https://blog.boot.dev/path/ to: blog.boot.dev/path", () => {
+  expect(normalizeURL("https://blog.boot.dev/path/")).toBe(
+    "blog.boot.dev/path",
+  );
+});
+test("normalizes input url from: http://blog.boot.dev/path/ai/ to: blog.boot.dev/path/ai", () => {
+  expect(normalizeURL("http://blog.boot.dev/path/ai/")).toBe(
+    "blog.boot.dev/path/ai",
+  );
+});
+test("normalizes input url from: https://blog.boot.dev to: blog.boot.dev", () => {
+  expect(normalizeURL("https://blog.boot.dev")).toBe("blog.boot.dev");
+});
+test("normalizes input url from: https://blog.boot.dev/path/aaaa/bbbb/cccc to: blog.boot.dev/path/aaaa/bbbb/cccc", () => {
+  expect(normalizeURL("https://blog.boot.dev/path/aaaa/bbbb/cccc")).toBe(
+    "blog.boot.dev/path/aaaa/bbbb/cccc",
+  );
+});
 
 test("getH1FromHTML basic", () => {
   const inputBody = `<html><body><h1>Test Title</h1></body></html>`;
@@ -26,7 +39,6 @@ test("getH1FromHTML blank", () => {
   const expected = "";
   expect(actual).toEqual(expected);
 });
-
 
 test("getFirstParagraphFromHTML main priority", () => {
   const inputBody = `
@@ -91,7 +103,10 @@ test("getURLsFromHTML double absolute", () => {
   const inputBody = `<html><body><a href="/path/one"><span>Boot.dev</span></a><a href="/path/two"><span>Boot.dev</span></a></body></html>`;
 
   const actual = getURLsFromHTML(inputBody, inputURL);
-  const expected = ["https://blog.boot.dev/path/one", "https://blog.boot.dev/path/two"];
+  const expected = [
+    "https://blog.boot.dev/path/one",
+    "https://blog.boot.dev/path/two",
+  ];
 
   expect(actual).toEqual(expected);
 });
@@ -116,7 +131,10 @@ test("getImagesFromHTML double relative", () => {
   const inputBody = `<html><body><img src="/logo.png" alt="Logo"><img src="/logo2.png" alt="Logo"></body></html>`;
 
   const actual = getImagesFromHTML(inputBody, inputURL);
-  const expected = ["https://blog.boot.dev/logo.png", "https://blog.boot.dev/logo2.png"];
+  const expected = [
+    "https://blog.boot.dev/logo.png",
+    "https://blog.boot.dev/logo2.png",
+  ];
 
   expect(actual).toEqual(expected);
 });
@@ -180,8 +198,14 @@ test("extractPageData basic2", () => {
     url: "https://blog.boot.dev",
     h1: "Test Title",
     first_paragraph: "This is the main paragraph.",
-    outgoing_links: ["https://blog.boot.dev/link1", "https://blog.boot.dev/link2"],
-    image_urls: ["https://blog.boot.dev/image1.jpg", "https://blog.boot.dev/image2.jpg"],
+    outgoing_links: [
+      "https://blog.boot.dev/link1",
+      "https://blog.boot.dev/link2",
+    ],
+    image_urls: [
+      "https://blog.boot.dev/image1.jpg",
+      "https://blog.boot.dev/image2.jpg",
+    ],
   };
 
   expect(actual).toEqual(expected);
