@@ -1,5 +1,6 @@
 import { argv } from "node:process";
 import { crawlSiteAsync } from "./crawl";
+import { writeCSVReport } from "./report";
 
 async function main() {
   const args = argv;
@@ -13,11 +14,8 @@ async function main() {
   console.log(`IT'S CRAWL TIME!\n\nCrawling: ${args[2]}`);
   const pages = await crawlSiteAsync(args[2], Number(args[3]), Number(args[4]));
   console.log(`\nDATA ACQUIRED...\n`);
+  writeCSVReport(pages)
   console.log("Finished crawling.");
-  const firstPage = Object.values(pages)[0];
-  if (firstPage) {
-    console.log(`First page record: ${firstPage["url"]} - ${firstPage["h1"]}`);
-  }
   process.exit(0);
 }
 

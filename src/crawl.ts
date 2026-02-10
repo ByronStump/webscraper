@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
 import pLimit from "p-limit";
 
-type ExtractedPageData = {
+export type ExtractedPageData = {
   url: string;
   h1: string;
   first_paragraph: string;
@@ -50,7 +50,7 @@ class ConcurrentCrawler {
           signal,
         });
       } catch (err) {
-        throw new Error(`Got Network error: ${(err as Error).message}`);
+        throw new Error((err as Error).message);
       }
       if (!response.ok || response.status >= 400) {
         throw new Error(`Response status: ${response.status}`);
@@ -100,7 +100,6 @@ class ConcurrentCrawler {
       console.log((err as Error).message);
       return;
     }
-    console.log(`HTML:\n${html}`);
   }
   async crawl(): Promise<Record<string, ExtractedPageData>> {
     await this.crawlPage(this.baseURL);
