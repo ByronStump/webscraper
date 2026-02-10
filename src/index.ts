@@ -2,7 +2,7 @@ import { argv } from "node:process";
 import { crawlSiteAsync } from "./crawl";
 
 async function main() {
-  const args = argv
+  const args = argv;
   if (args.length < 3) {
     console.error("Error, not enough arguments");
     process.exit(1);
@@ -13,7 +13,11 @@ async function main() {
   console.log(`IT'S CRAWL TIME!\n\nCrawling: ${args[2]}`);
   const pages = await crawlSiteAsync(args[2], Number(args[3]), Number(args[4]));
   console.log(`\nDATA ACQUIRED...\n`);
-  console.log(pages);
+  console.log("Finished crawling.");
+  const firstPage = Object.values(pages)[0];
+  if (firstPage) {
+    console.log(`First page record: ${firstPage["url"]} - ${firstPage["h1"]}`);
+  }
   process.exit(0);
 }
 

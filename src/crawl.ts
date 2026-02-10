@@ -10,37 +10,31 @@ type ExtractedPageData = {
 };
 
 class ConcurrentCrawler {
-  baseURL: string;
-  pages: Record<string, number>;
-  limit: ReturnType<typeof pLimit>;
-  maxPages: number;
-  private shouldStop: boolean;
-  private allTasks: Set<Promise<void>>;
+  private baseURL: string;
+  private pages: Record<string, ExtractedPageData>;
+  private limit: ReturnType<typeof pLimit>;
+
+  private maxPages: number = 100;
+  private shouldStop = false;
+  private allTasks = new Set<Promise<void>>();
   private abortController = new AbortController();
+  private visited = new Set<string>();
   constructor(baseURL: string, maxConcurrency: number = 5, maxPages: number) {
     this.baseURL = baseURL;
     this.pages = {};
     this.limit = pLimit(maxConcurrency);
     this.maxPages = maxPages;
-    this.shouldStop = false;
-    this.allTasks = new Set();
   }
   private addPageVisit(normalizedURL: string): boolean {
-    if (this.shouldStop) {
-      return false;
-    }
-    if (this.pages[normalizedURL] > 0) {
-      this.pages[normalizedURL]++;
-      return false;
-    }
-    const uniqueCount = Object.keys(this.pages).length
-    if (uniqueCount >= this.maxPages) {
+    if (this.shouldStop) return false;
+    if (this.visited.has(normalizedURL)) return false;
+    if (this.visited.size >= this.maxPages) {
       this.shouldStop = true;
       console.log("Reached maximum number of pages to crawl.");
       this.abortController.abort();
       return false;
     }
-    this.pages[normalizedURL] = 1;
+    this.visited.add(normalizedURL);
     return true;
   }
   private async getHTML(currentURL: string): Promise<string> {
@@ -81,33 +75,34 @@ class ConcurrentCrawler {
       return;
     }
     console.log(`Fetching from: ${currentURL}`);
-    let html = ""
+    let html = "";
     try {
-        html = await this.getHTML(currentURL);
-        if (!html) {
+      html = await this.getHTML(currentURL);
+      if (!html) {
         console.log(`html from: ${currentURL}, doesn't have any html`);
         return;
-        }
-        
-        const htmlURLs = getURLsFromHTML(html, this.baseURL);
-        const promiseArray: Promise<void>[] = [];
-        for (const url of htmlURLs) {
+      }
+
+      const data = extractPageData(html, currentURL);
+      this.pages[normalizedURL] = data;
+      const promiseArray: Promise<void>[] = [];
+      for (const url of data.outgoing_links) {
         const task = this.crawlPage(url);
         this.allTasks.add(
-            task.finally(() => {
+          task.finally(() => {
             this.allTasks.delete(task);
-            }),
+          }),
         );
         promiseArray.push(task);
-        }
-        await Promise.all(promiseArray);
+      }
+      await Promise.all(promiseArray);
     } catch (err) {
-        console.log((err as Error).message)
-        return
+      console.log((err as Error).message);
+      return;
     }
     console.log(`HTML:\n${html}`);
   }
-  async crawl(): Promise<Record<string, number>> {
+  async crawl(): Promise<Record<string, ExtractedPageData>> {
     await this.crawlPage(this.baseURL);
     return this.pages;
   }
@@ -147,14 +142,14 @@ export function getURLsFromHTML(html: string, baseURL: string): string[] {
   for (const tag of aTags) {
     const href = tag.getAttribute("href");
     if (href) {
-        try {
-            const absoluteURL = new URL(href, baseURL).toString();
-            result.push(absoluteURL);
-        } catch (err) {
-            console.error((err as Error).message)
-        }
+      try {
+        const absoluteURL = new URL(href, baseURL).toString();
+        result.push(absoluteURL);
+      } catch (err) {
+        console.error((err as Error).message);
+      }
     }
-    if (!href) continue
+    if (!href) continue;
   }
   return result;
 }
@@ -192,7 +187,7 @@ export async function crawlSiteAsync(
   baseURL: string,
   maxConcurrency: number = 5,
   maxPages: number = 10,
-): Promise<Record<string, number>> {
+): Promise<Record<string, ExtractedPageData>> {
   const crawler = new ConcurrentCrawler(baseURL, maxConcurrency, maxPages);
   return await crawler.crawl();
 }
